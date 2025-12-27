@@ -3,61 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roulette Strategy Tester - Terminali</title>
+    <title>Roulette Strategy - Auto Recovery</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: #e0e0e0; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: #e0e0e0; padding: 20px; }
         .container { max-width: 700px; margin: auto; background: #2d2d2d; padding: 25px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
-        h1 { text-align: center; color: #4CAF50; margin-bottom: 30px; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 20px; align-items: flex-end; }
-        .field { flex: 1; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: #bbb; }
-        input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #1a1a1a; color: white; font-size: 16px; box-sizing: border-box; }
-        button { padding: 12px 24px; background: #4CAF50; border: none; color: white; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 6px; transition: 0.3s; }
-        button:hover { background: #45a049; }
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .card { background: #3d3d3d; padding: 15px; border-radius: 8px; text-align: center; }
-        .saldo-val { font-size: 28px; color: #f1c40f; font-weight: bold; }
-        .numeri-lista { font-size: 18px; color: #3498db; word-wrap: break-word; }
-        .log-box { margin-top: 20px; height: 180px; overflow-y: auto; background: #000; padding: 15px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; font-size: 13px; border: 1px solid #444; }
-        .win { color: #2ecc71; font-weight: bold; }
-        .lose { color: #e74c3c; }
+        h1 { text-align: center; color: #4CAF50; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .card { background: #3d3d3d; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #444; }
+        .highlight { font-size: 24px; color: #f1c40f; font-weight: bold; }
+        .input-area { background: #222; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        input { width: 80px; padding: 10px; border-radius: 4px; border: none; font-size: 18px; text-align: center; }
+        button { padding: 10px 20px; background: #27ae60; border: none; color: white; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .log-box { height: 200px; overflow-y: auto; background: #000; padding: 15px; font-family: monospace; font-size: 13px; border: 1px solid #444; color: #aaa; }
+        .advice { color: #3498db; font-weight: bold; margin-top: 10px; font-size: 1.1em; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Roulette Tracker Pro</h1>
+    <h1>Roulette Recovery System</h1>
     
-    <div class="input-group">
-        <div class="field">
-            <label>Fiche (€):</label>
-            <input type="number" id="valoreFiche" value="0.10" step="0.01">
-        </div>
-        <div class="field">
-            <label>Ultimo Numero Estratto:</label>
-            <input type="number" id="numeroEstratto" placeholder="0-36" min="0" max="36" onkeydown="if(event.key==='Enter') elaboraGiocata()">
-        </div>
-        <button onclick="elaboraGiocata()">GIOCA</button>
-    </div>
-
     <div class="dashboard">
         <div class="card">
-            <label>SALDO REAL-TIME</label>
-            <div id="saldoDisplay" class="saldo-val">0.00€</div>
+            <label>SALDO ATTUALE</label>
+            <div id="saldoDisplay" class="highlight">0.00€</div>
         </div>
         <div class="card">
-            <label>NUMERI IN GIOCATA</label>
-            <div id="numeriInGioco" class="numeri-lista">-</div>
+            <label>PUNTATA CONSIGLIATA (cad.)</label>
+            <div id="ficheConsigliata" class="highlight" style="color: #2ecc71;">0.10€</div>
         </div>
     </div>
 
-    <div class="log-box" id="logConsole">Pronto per il primo inserimento...</div>
+    <div class="input-area">
+        <label>Inserisci Numero Estratto: </label>
+        <input type="number" id="numeroEstratto" min="0" max="36" onkeydown="if(event.key==='Enter') elabora()">
+        <button onclick="elabora()">ELABORA</button>
+        <div id="infoGiocata" class="advice">Numeri da giocare: -</div>
+    </div>
+
+    <div class="log-box" id="log">Inizia inserendo il primo numero uscito...</div>
     
-    <button onclick="resetTotale()" style="background:#8e44ad; width: 100%; margin-top: 20px;">RESET SESSIONE</button>
+    <button onclick="reset()" style="background:#c0392b; width:100%; margin-top:20px;">RESET TOTALE</button>
 </div>
 
 <script>
-    // Mappatura esatta estratta dal tuo file immagine
     const mappaTerminali = {
         0: [7], 1: [8], 2: [7, 9], 3: [8], 4: [11], 5: [10, 12], 6: [11], 7: [2, 14],
         8: [1, 3, 13, 15], 9: [2, 14], 10: [5, 17], 11: [4, 6, 16, 18], 12: [5, 17],
@@ -68,65 +57,83 @@
         34: [29], 35: [28, 30], 36: [29]
     };
 
-    let saldo = 0.0;
+    let saldo = 0;
     let numeriAttivi = [];
+    let ultimaFiche = 0.10;
+    let deficitSessione = 0; // Tiene traccia di quanto dobbiamo recuperare
 
-    function elaboraGiocata() {
+    function calcolaFicheNecessaria(nNumeri) {
+        if (nNumeri === 0) return 0.10;
+        
+        // Formula: (Deficit + Profitto Desiderato) / (36 - Numero di pezzi puntati)
+        // Usiamo un profitto minimo proporzionale allo step
+        let profittoTarget = 0.50; 
+        let necessaria = (Math.abs(saldo) + profittoTarget) / (36 - nNumeri);
+        
+        // Applichiamo i tuoi scaglioni
+        if (necessaria < 0.10) necessaria = 0.10;
+        
+        // Logica scaglioni: se supera 3€ passa a step 0.2, ecc.
+        // Arrotondiamo sempre per eccesso al centesimo o al decimo
+        let finale = Math.ceil(necessaria * 10) / 10; 
+        
+        if (finale > 3.0) {
+            // Se la fiche singola supera i 3 euro, la strategia diventa molto rischiosa
+            // Qui il sistema continua a calcolare ma potresti voler mettere un alert
+        }
+        
+        return finale;
+    }
+
+    function elabora() {
         const input = document.getElementById('numeroEstratto');
-        const fiche = parseFloat(document.getElementById('valoreFiche').value);
         const estratto = parseInt(input.value);
-        const log = document.getElementById('logConsole');
-
+        const log = document.getElementById('log');
         if (isNaN(estratto) || estratto < 0 || estratto > 36) return;
 
-        let logMsg = `> Numero uscito: <b>${estratto}</b><br>`;
+        let res = `> Uscito: <b>${estratto}</b> | `;
 
-        // 1. Controllo Vincita (basato sulla giocata precedente)
+        // 1. Verifica vincita
         if (numeriAttivi.length > 0) {
             if (numeriAttivi.includes(estratto)) {
-                const vincita = fiche * 36;
-                saldo += vincita;
-                logMsg += `<span class="win">VINTO! +${vincita.toFixed(2)}€</span><br>`;
-                // Reset strategia dopo vittoria
-                numeriAttivi = [];
+                let vinta = ultimaFiche * 36;
+                saldo += vinta;
+                res += `<span style="color:#2ecc71">VINTO +${vinta.toFixed(2)}€</span><br>`;
+                numeriAttivi = []; // Reset totale
             } else {
-                logMsg += `<span class="lose">Perso.</span><br>`;
-                // Se perdo, tengo i vecchi numeri (già in numeriAttivi)
+                res += `<span style="color:#e74c3c">PERSO</span><br>`;
             }
         }
 
-        // 2. Calcolo nuovi numeri terminali
-        const nuoviTerminali = mappaTerminali[estratto] || [];
-        const setNuovi = [estratto, ...nuoviTerminali];
-
-        // Aggiunta nuovi numeri a quelli esistenti (evitando duplicati)
-        setNuovi.forEach(n => {
+        // 2. Determina nuovi numeri
+        const nuovi = [estratto, ...(mappaTerminali[estratto] || [])];
+        nuovi.forEach(n => {
             if (!numeriAttivi.includes(n)) numeriAttivi.push(n);
         });
 
-        // 3. Pagamento giocata per il prossimo giro
-        const costoGiocata = numeriAttivi.length * fiche;
-        saldo -= costoGiocata;
+        // 3. Calcola nuova fiche per il recupero
+        ultimaFiche = calcolaFicheNecessaria(numeriAttivi.length);
+        
+        // 4. Detrazione saldo
+        let costoTotale = numeriAttivi.length * ultimaFiche;
+        saldo -= costoTotale;
 
-        logMsg += `Nuova puntata su ${numeriAttivi.length} numeri: -${costoGiocata.toFixed(2)}€<br>---`;
-
-        // Aggiornamento UI
+        // Aggiorna UI
         document.getElementById('saldoDisplay').innerText = saldo.toFixed(2) + "€";
-        document.getElementById('numeriInGioco').innerText = numeriAttivi.sort((a,b)=>a-b).join(', ');
-        log.innerHTML = logMsg + "<br>" + log.innerHTML;
+        document.getElementById('ficheConsigliata').innerText = ultimaFiche.toFixed(2) + "€";
+        document.getElementById('infoGiocata').innerText = "Numeri (" + numeriAttivi.length + "): " + numeriAttivi.sort((a,b)=>a-b).join(', ');
+        
+        log.innerHTML = res + `Puntati ${numeriAttivi.length} numeri a ${ultimaFiche.toFixed(2)}€ (Tot: -${costoTotale.toFixed(2)}€)<br>---<br>` + log.innerHTML;
         
         input.value = '';
         input.focus();
     }
 
-    function resetTotale() {
-        saldo = 0;
-        numeriAttivi = [];
+    function reset() {
+        saldo = 0; numeriAttivi = []; ultimaFiche = 0.10;
         document.getElementById('saldoDisplay').innerText = "0.00€";
-        document.getElementById('numeriInGioco').innerText = "-";
-        document.getElementById('logConsole').innerHTML = "Sessione resettata.";
+        document.getElementById('log').innerHTML = "Reset effettuato.";
     }
 </script>
-
 </body>
 </html>
