@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roulette Strategy Tester - Terminali</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: #e0e0e0; padding: 20px; }
+        .container { max-width: 700px; margin: auto; background: #2d2d2d; padding: 25px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+        h1 { text-align: center; color: #4CAF50; margin-bottom: 30px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; align-items: flex-end; }
+        .field { flex: 1; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: #bbb; }
+        input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #444; background: #1a1a1a; color: white; font-size: 16px; box-sizing: border-box; }
+        button { padding: 12px 24px; background: #4CAF50; border: none; color: white; font-size: 16px; font-weight: bold; cursor: pointer; border-radius: 6px; transition: 0.3s; }
+        button:hover { background: #45a049; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .card { background: #3d3d3d; padding: 15px; border-radius: 8px; text-align: center; }
+        .saldo-val { font-size: 28px; color: #f1c40f; font-weight: bold; }
+        .numeri-lista { font-size: 18px; color: #3498db; word-wrap: break-word; }
+        .log-box { margin-top: 20px; height: 180px; overflow-y: auto; background: #000; padding: 15px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; font-size: 13px; border: 1px solid #444; }
+        .win { color: #2ecc71; font-weight: bold; }
+        .lose { color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Roulette Tracker Pro</h1>
+    
+    <div class="input-group">
+        <div class="field">
+            <label>Fiche (€):</label>
+            <input type="number" id="valoreFiche" value="0.10" step="0.01">
+        </div>
+        <div class="field">
+            <label>Ultimo Numero Estratto:</label>
+            <input type="number" id="numeroEstratto" placeholder="0-36" min="0" max="36" onkeydown="if(event.key==='Enter') elaboraGiocata()">
+        </div>
+        <button onclick="elaboraGiocata()">GIOCA</button>
+    </div>
+
+    <div class="dashboard">
+        <div class="card">
+            <label>SALDO REAL-TIME</label>
+            <div id="saldoDisplay" class="saldo-val">0.00€</div>
+        </div>
+        <div class="card">
+            <label>NUMERI IN GIOCATA</label>
+            <div id="numeriInGioco" class="numeri-lista">-</div>
+        </div>
+    </div>
+
+    <div class="log-box" id="logConsole">Pronto per il primo inserimento...</div>
+    
+    <button onclick="resetTotale()" style="background:#8e44ad; width: 100%; margin-top: 20px;">RESET SESSIONE</button>
+</div>
+
+<script>
+    // Mappatura esatta estratta dal tuo file immagine
+    const mappaTerminali = {
+        0: [7], 1: [8], 2: [7, 9], 3: [8], 4: [11], 5: [10, 12], 6: [11], 7: [2, 14],
+        8: [1, 3, 13, 15], 9: [2, 14], 10: [5, 17], 11: [4, 6, 16, 18], 12: [5, 17],
+        13: [8, 20], 14: [7, 9, 19, 21], 15: [8, 20], 16: [11, 23], 17: [10, 12, 22, 24],
+        18: [11, 23], 19: [14, 26], 20: [13, 15, 25, 27], 21: [14, 26], 22: [17, 29],
+        23: [16, 18, 30, 28], 24: [17, 29], 25: [20, 32], 26: [19, 21, 31, 33], 27: [20, 32],
+        28: [23, 35], 29: [22, 24, 34, 36], 30: [23, 35], 31: [26], 32: [25, 27], 33: [26],
+        34: [29], 35: [28, 30], 36: [29]
+    };
+
+    let saldo = 0.0;
+    let numeriAttivi = [];
+
+    function elaboraGiocata() {
+        const input = document.getElementById('numeroEstratto');
+        const fiche = parseFloat(document.getElementById('valoreFiche').value);
+        const estratto = parseInt(input.value);
+        const log = document.getElementById('logConsole');
+
+        if (isNaN(estratto) || estratto < 0 || estratto > 36) return;
+
+        let logMsg = `> Numero uscito: <b>${estratto}</b><br>`;
+
+        // 1. Controllo Vincita (basato sulla giocata precedente)
+        if (numeriAttivi.length > 0) {
+            if (numeriAttivi.includes(estratto)) {
+                const vincita = fiche * 36;
+                saldo += vincita;
+                logMsg += `<span class="win">VINTO! +${vincita.toFixed(2)}€</span><br>`;
+                // Reset strategia dopo vittoria
+                numeriAttivi = [];
+            } else {
+                logMsg += `<span class="lose">Perso.</span><br>`;
+                // Se perdo, tengo i vecchi numeri (già in numeriAttivi)
+            }
+        }
+
+        // 2. Calcolo nuovi numeri terminali
+        const nuoviTerminali = mappaTerminali[estratto] || [];
+        const setNuovi = [estratto, ...nuoviTerminali];
+
+        // Aggiunta nuovi numeri a quelli esistenti (evitando duplicati)
+        setNuovi.forEach(n => {
+            if (!numeriAttivi.includes(n)) numeriAttivi.push(n);
+        });
+
+        // 3. Pagamento giocata per il prossimo giro
+        const costoGiocata = numeriAttivi.length * fiche;
+        saldo -= costoGiocata;
+
+        logMsg += `Nuova puntata su ${numeriAttivi.length} numeri: -${costoGiocata.toFixed(2)}€<br>---`;
+
+        // Aggiornamento UI
+        document.getElementById('saldoDisplay').innerText = saldo.toFixed(2) + "€";
+        document.getElementById('numeriInGioco').innerText = numeriAttivi.sort((a,b)=>a-b).join(', ');
+        log.innerHTML = logMsg + "<br>" + log.innerHTML;
+        
+        input.value = '';
+        input.focus();
+    }
+
+    function resetTotale() {
+        saldo = 0;
+        numeriAttivi = [];
+        document.getElementById('saldoDisplay').innerText = "0.00€";
+        document.getElementById('numeriInGioco').innerText = "-";
+        document.getElementById('logConsole').innerHTML = "Sessione resettata.";
+    }
+</script>
+
+</body>
+</html>
